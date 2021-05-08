@@ -1,0 +1,82 @@
+1.HBase定义
+    HBase是一种分布式、可扩展、支持海量数据存储的NoSQL数据库。
+2.HBase数据模型
+
+    2.1 HBase逻辑模型
+        逻辑上，HBase的数据模型同关系型数据库很类似，数据存储在一张表中，有行有列。但从HBase的底层物理存储结构（K-V）来看，HBase更像是一个multi-dimensional map。
+    2.2 数据模型
+        2.2.1 Name Space
+            命名空间，类似于关系型数据库的DatabBase概念，每个命名空间下有多个表。HBase有两个自带的命名空间，分别是hbase和default，hbase中存放的是HBase内置的表，
+            default表是用户默认使用的命名空间。
+        2.2.2 Region
+            类似于关系型数据库的表概念。不同的是，HBase定义表时只需要声明列族即可，不需要声明具体的列。这意味着，往HBase写入数据时，字段可以动态、按需指定。
+            因此，和关系型数据库相比，HBase能够轻松应对字段变更的场景。
+        2.2.3 Row
+            HBase表中的每行数据都由一个RowKey和多个Column（列）组成，数据是按照RowKey的字典顺序存储的，并且查询数据时只能根据RowKey进行检索，所以RowKey的设计十分重要。
+        2.2.4 Column
+            HBase中的每个列都由Column Family(列族)和Column Qualifier（列限定符）进行限定，例如info：name，info：age。建表时，只需指明列族，而列限定符无需预先定义。
+        2.2.5 Time Stamp
+            用于标识数据的不同版本（version），每条数据写入时，如果不指定时间戳，系统会自动为其加上该字段，其值为写入HBase的时间。
+        2.2.6 Cell
+            由{rowkey, column Family：column Qualifier, time Stamp} 唯一确定的单元。cell中的数据是没有类型的，全部是字节数组形式存贮。
+3.HBase基本架构
+    架构角色：
+    3.1 Region Server
+        Region Server为 Region的管理者，其实现类为HRegionServer，主要作用如下:
+            对于数据的操作：get, put, delete；
+        对于Region的操作：splitRegion、compactRegion。
+    3.2 Master
+        Master是所有Region Server的管理者，其实现类为HMaster，主要作用如下：
+    	    对于表的操作：create, delete, alter
+        对于RegionServer的操作：分配regions到每个RegionServer，监控每个RegionServer的状态，负载均衡和故障转移。
+    3.3 Zookeeper
+        HBase通过Zookeeper来做Master的高可用、RegionServer的监控、元数据的入口以及集群配置的维护等工作。
+    3.4 HDFS
+        HDFS为HBase提供最终的底层数据存储服务，同时为HBase提供高可用的支持。
+4.架构原理
+    4.1 StoreFile
+        保存实际数据的物理文件，StoreFile以HFile的形式存储在HDFS上。每个Store会有一个或多个StoreFile（HFile），数据在每个StoreFile中都是有序的。
+    4.2 MemStore
+        写缓存，由于HFile中的数据要求是有序的，所以数据是先存储在MemStore中，排好序后，等到达刷写时机才会刷写到HFile，每次刷写都会形成一个新的HFile。
+    4.3 WAL
+        由于数据要经MemStore排序后才能刷写到HFile，但把数据保存在内存中会有很高的概率导致数据丢失，为了解决这个问题，数据会先写在一个叫做Write-Ahead logfile的文件中，
+        然后再写入MemStore中。所以在系统出现故障的时候，数据可以通过这个日志文件重建。
+5.HBase写入流程
+    参照 HBase写入流程.png
+    5.1 Client先访问zookeeper，获取hbase:meta表位于哪个Region Server。
+    5.2 访问对应的Region Server，获取hbase:meta表，根据读请求的namespace:table/rowkey，查询出目标数据位于哪个Region Server中的哪个Region中。
+        并将该table的region信息以及meta表的位置信息缓存在客户端的meta cache，方便下次访问。
+    5.3 与目标Region Server进行通讯；
+    5.4 将数据顺序写入（追加）到WAL；
+    5.5 将数据写入对应的MemStore，数据会在MemStore进行排序；
+    5.6 向客户端发送ack；
+    5.7 等达到MemStore的刷写时机后，将数据刷写到HFile。
+6.MemStore刷写
+    参照MemStore刷写时机.png
+    6.1 当某个memstroe的大小达到了hbase.hregion.memstore.flush.size（默认值128M），其所在region的所有memstore都会刷写。
+        当memstore的大小达到了
+        hbase.hregion.memstore.flush.size（默认值128M）
+        * hbase.hregion.memstore.block.multiplier（默认值4）
+        时，会阻止继续往该memstore写数据。
+    6.2 当region server中memstore的总大小达到(java_heapsize)
+            *(hbase.regionserver.global.memstore.size)（默认值0.4）
+        *(hbase.regionserver.global.memstore.size.upper.limit)（默认值0.95），
+        region会按照其所有memstore的大小顺序（由大到小）依次进行刷写。直到region server中所有memstore的总大小减小到hbase.regionserver.global.memstore.size.lower.limit以下。
+        当region server中memstore的总大小达到
+        java_heapsize*hbase.regionserver.global.memstore.size（默认值0.4）
+        时，会阻止继续往所有的memstore写数据。
+    6.3 到达自动刷写的时间，也会触发memstore flush。自动刷新的时间间隔由该属性进行配置hbase.regionserver.optionalcacheflushinterval（默认1小时）。
+    6.4 当WAL文件的数量超过hbase.regionserver.max.logs，region会按照时间顺序依次进行刷写，直到WAL文件数量减小到hbase.regionserver.max.log以下
+        （该属性名已经废弃，现无需手动设置，最大值为32）。
+7.HBase读取流程
+    参照HBase读取流程.png
+    7.1 Client先访问zookeeper，获取hbase:meta表位于哪个Region Server。
+    7.2 访问对应的Region Server，获取hbase:meta表，根据读请求的namespace:table/rowkey，查询出目标数据位于哪个Region Server中的哪个Region中。并将该table的region信息以及
+        meta表的位置信息缓存在客户端的meta cache，方便下次访问。
+    7.3 与目标Region Server进行通讯；
+    7.4 分别在Block Cache（读缓存），MemStore和Store File（HFile）中查询目标数据，并将查到的所有数据进行合并。此处所有数据是指同一条数据的不同版本（time stamp）或者不同的
+        类型（Put/Delete）。
+    7.5 将从文件中查询到的数据块（Block，HFile数据存储单元，默认大小为64KB）缓存到Block Cache。
+    7.6 将合并后的最终结果返回给客户端。
+
+
