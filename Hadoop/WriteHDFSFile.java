@@ -15,9 +15,17 @@ public class WriteHDFSFile {
 
     public static void main(String[] args) throws IOException, URISyntaxException, InterruptedException {
         //1 创建连接
-        Configuration configuration = new Configuration();
-        FileSystem fileSystem = FileSystem.get(configuration);
-        copyTplocalFile();
+
+        Configuration conf=new Configuration();
+        String filePath = "hdfs://server1:9000/user/south/test/text2.txt";
+        URI url = new URI("hdfs://server1:9000");
+        String user = "root";
+        Path path = new Path(filePath);
+        FileSystem fs=FileSystem.get(url,conf,user);
+
+
+
+        create(fs,path);
         //2 设置路径
 //        String filePath = "hdfs://server1:9000/user/south/test/business.txt";
     }
@@ -41,21 +49,23 @@ public class WriteHDFSFile {
 
     //    创建文件并写入数据
     //@Test
-    public static void create() throws URISyntaxException, IOException, InterruptedException {
+    public static void create(FileSystem fs,Path path) throws URISyntaxException, IOException, InterruptedException {
 //        1、创建配置文件
         //        要确认是org.apache.hadoop.conf.Configuration;
-        Configuration conf=new Configuration();
-        String filePath = "hdfs://server1:9000/user/south/test/text1.txt";
-        URI url = new URI("hdfs://server1:9000");
-        String user = "root";
-        Path path = new Path(filePath);
+//        Configuration conf=new Configuration();
+//        String filePath = "hdfs://server1:9000/user/south/test/text1.txt";
+//        URI url = new URI("hdfs://server1:9000");
+//        String user = "root";
+//        Path path = new Path(filePath);
 
-        FileSystem fs=FileSystem.get(url,conf,user);
+//        FileSystem fs=FileSystem.get(url,conf,user);
 //        3、调用ApI操作
 //        创建文件并写入数据
-        FSDataOutputStream in = fs.append(path);//追加写入
-//        FSDataOutputStream in=fs.create(path);//创建文件
-        in.write("hello ereryone \nhello everybody".getBytes());
+//        FSDataOutputStream in = fs.append(path);//追加写入
+        FSDataOutputStream in=fs.create(path);//创建文件
+        for (int i=0;i<10;i++){
+            in.write((i+"\n").getBytes());
+        }
 //        in.write("Hello,everyone".getBytes());
         in.flush();
 //       4、关闭流
@@ -67,7 +77,7 @@ public class WriteHDFSFile {
     //@Test
     public static void cat() throws URISyntaxException, IOException, InterruptedException {
 //        1、创建配置文件
-        //        要确认是org.apache.hadoop.conf.Configuration;
+//        要确认是org.apache.hadoop.conf.Configuration;
         Configuration conf=new Configuration();
         String filePath = "hdfs://server1:9000/user/south/test/text1.txt";
         URI url = new URI("hdfs://server1:9000");

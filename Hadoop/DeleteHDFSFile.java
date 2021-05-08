@@ -12,7 +12,7 @@ import java.net.URISyntaxException;
 public class DeleteHDFSFile {
     public static void main(String[] args) throws InterruptedException, IOException, URISyntaxException {
         Configuration conf=new Configuration();//加载配置
-        String OutputFilePath = "/user/south/input/test2.txt";
+        String OutputFilePath = "/user/south/input/test.txt";
         String OutputFilePath1 = "/user/south/input";
         Path path = new Path(OutputFilePath);
         Path path1 = new Path(OutputFilePath1);
@@ -33,7 +33,22 @@ public class DeleteHDFSFile {
             System.out.println(status.getReplication());
 
         }
-        fs.delete(path,true);//删除路径
+        FileStatus[] files = fs.listStatus(path);
+        if (files.length == 0) {
+            fs.delete(path, false);
+        } else {
+            for (FileStatus fst : files) {
+                if (fst.isFile()) {
+                    System.out.println("Path:"+fst.getPath());
+                    fs.delete(path, true);
+                } else {
+                    System.out.println("Path:"+fst.getPath());
+                    fs.delete(fst.getPath(),true);
+                }
+            }
+        }
+
+        fs.delete(path,false);//删除路径
         FileStatus[] liststatus1=fs.listStatus(path1);//无递归
         for(FileStatus status: liststatus1){
             System.out.println("删除后");
