@@ -6,53 +6,49 @@ import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.util.Bytes;
 
 import java.io.IOException;
+import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
 
 public class HbaseDemo {
     public static void main(String[] args) {
         try {
-            /*
-            private String id;
-            private String username;
-            private String password;
-            private String gender;
-            private String age;
-            private String phone;
-            private String email;
-            public User(String id, String username, String password, String gender, String age, String phone, String email) {
-             */
-            createTable("user_table", new String[] { "information", "contact" });
-            User user = new User("001", "xiaoming", "123456", "man", "20", "13355550021", "1232821@csdn.com");
-            insertData("user_table", user);
-            User user2 = new User("002", "xiaohong", "654321", "female", "18", "18757912212", "214214@csdn.com");
-            insertData("user_table", user2);
-            List<User> list = getAllData("user_table");
+            String tableName = "USER";
+//            createTable(tableName, new String[] { "information", "contact" ,"address"});
+            User user = new User("001", "xiaoming", "123456", "man", "20",
+                    "13355550021", "1232821@csdn.com","beijing");
+            insertData(tableName, user);
+            User user2 = new User("002", "xiaohong", "654321", "female", "18",
+                    "18757912212", "214214@csdn.com","shanghai");
+            insertData(tableName, user2);
+            List<User> list = getAllData(tableName);
             System.out.println("--------------------插入两条数据后--------------------");
             for (User user3 : list){
                 System.out.println(user3.toString());
             }
             System.out.println("--------------------获取原始数据-----------------------");
-            getNoDealData("user_table");
+            getNoDealData(tableName);
             System.out.println("--------------------根据rowKey查询--------------------");
-            User user4 = getDataByRowKey("user_table", "user-001");
+            User user4 = getDataByRowKey(tableName, "user-001");
             System.out.println(user4.toString());
             System.out.println("--------------------获取指定单条数据-------------------");
-            String user_phone = getCellData("user_table", "user-001", "contact", "phone");
+            String user_phone = getCellData(tableName, "user-001", "contact", "phone");
             System.out.println(user_phone);
-            User user5 = new User("test-003", "xiaoguang", "789012", "man", "22", "12312132214", "856832@csdn.com");
-            insertData("user_table", user5);
-            List<User> list2 = getAllData("user_table");
+            User user5 = new User("test-003", "xiaoguang", "789012", "man", "22",
+                    "12312132214", "856832@csdn.com","nanjing");
+            insertData(tableName, user5);
+            List<User> list2 = getAllData(tableName);
             System.out.println("--------------------插入测试数据后--------------------");
             for (User user6 : list2){
                 System.out.println(user6.toString());
             }
-            deleteByRowKey("user_table", "user-test-003");
-            List<User> list3 = getAllData("user_table");
+            deleteByRowKey(tableName, "user-test-003");
+            List<User> list3 = getAllData(tableName);
             System.out.println("--------------------删除测试数据后--------------------");
             for (User user7 : list3){
                 System.out.println(user7.toString());
             }
+//            deleteTable(tableName);//删除表格
 
         }catch (Exception e) {
             e.printStackTrace();
@@ -61,31 +57,30 @@ public class HbaseDemo {
     //连接集群
     public static Connection initHbase() throws IOException {
 
-        Configuration configuration = HBaseConfiguration.create();
-        configuration.set("hbase.zookeeper.property.clientPort", "2181");
-        configuration.set("hbase.zookeeper.quorum", "server1,server2,server3");
+        Configuration configuration = HBaseConfiguration.create();//创建HBase配置
+        configuration.set("hbase.zookeeper.property.clientPort", "2181");//设置zookeeper端口
+        configuration.set("hbase.zookeeper.quorum", "server1,server2,server3");//设置zookeeper
         //集群配置↓
         //configuration.set("hbase.zookeeper.quorum", "101.236.39.141,101.236.46.114,101.236.46.113");
         configuration.set("hbase.master", "server1:60000");
-        Connection connection = ConnectionFactory.createConnection(configuration);
-        return connection;
+        return ConnectionFactory.createConnection(configuration);
     }
 
     //创建表
     public static void createTable(String tableNmae, String[] cols) throws IOException {
 
         TableName tableName = TableName.valueOf(tableNmae);
-        System.out.println(tableName.toString());
+        System.out.println(tableName);
         Admin admin = initHbase().getAdmin();
         if (admin.tableExists(tableName)) {
             System.out.println("表已存在！");
         } else {
-            HTableDescriptor hTableDescriptor = new HTableDescriptor(tableName);
+            HTableDescriptor hTableDescriptor = new HTableDescriptor(tableName);//表
             for (String col : cols) {
-                HColumnDescriptor hColumnDescriptor = new HColumnDescriptor(col);
-                hTableDescriptor.addFamily(hColumnDescriptor);
+                HColumnDescriptor hColumnDescriptor = new HColumnDescriptor(col);//列簇
+                hTableDescriptor.addFamily(hColumnDescriptor);//增加列簇
             }
-            admin.createTable(hTableDescriptor);
+            admin.createTable(hTableDescriptor);//创建表
         }
     }
 
@@ -99,7 +94,7 @@ public class HbaseDemo {
         put.addColumn("information".getBytes(), "gender".getBytes(), user.getGender().getBytes()) ;
         put.addColumn("contact".getBytes(), "phone".getBytes(), user.getPhone().getBytes());
         put.addColumn("contact".getBytes(), "email".getBytes(), user.getEmail().getBytes());
-        //HTable table = new HTable(initHbase().getConfiguration(),tablename);已弃用
+        put.addColumn("address".getBytes(), "city".getBytes(), user.getCity().getBytes());
         Table table = initHbase().getTable(tablename);
         table.put(put);
     }
@@ -129,23 +124,49 @@ public class HbaseDemo {
         if(!get.isCheckExistenceOnly()){
             Result result = table.get(get);
             for (Cell cell : result.rawCells()){
-                String colName = Bytes.toString(cell.getQualifierArray(),cell.getQualifierOffset(),cell.getQualifierLength());
+                String colName = Bytes.toString(cell.getQualifierArray(),cell.getQualifierOffset(),cell.getQualifierLength());//字节转换
                 String value = Bytes.toString(cell.getValueArray(), cell.getValueOffset(), cell.getValueLength());
-                if(colName.equals("username")){
-                    user.setUsername(value);
+                switch (colName){
+                    case "username":
+                        user.setUsername(value);
+                        break;
+                    case "age":
+                        user.setAge(value);
+                        break;
+                    case "gender":
+                        user.setGender(value);
+                        break;
+                    case "phone":
+                        user.setPhone(value);
+                        break;
+                    case "email":
+                        user.setEmail(value);
+                        break;
+                    case "city":
+                        user.setCity(value);
+                        break;
+                    default:
+                        System.out.println("传入值有误，请检查");
+                        break;
                 }
-                if(colName.equals("age")){
-                    user.setAge(value);
-                }
-                if (colName.equals("gender")){
-                    user.setGender(value);
-                }
-                if (colName.equals("phone")){
-                    user.setPhone(value);
-                }
-                if (colName.equals("email")){
-                    user.setEmail(value);
-                }
+//                if(colName.equals("username")){
+//                    user.setUsername(value);
+//                }
+//                if(colName.equals("age")){
+//                    user.setAge(value);
+//                }
+//                if (colName.equals("gender")){
+//                    user.setGender(value);
+//                }
+//                if (colName.equals("phone")){
+//                    user.setPhone(value);
+//                }
+//                if (colName.equals("email")){
+//                    user.setEmail(value);
+//                }
+//                if (colName.equals("city")){
+//                    user.setCity(value);
+//                }
             }
         }
         return user;
@@ -206,6 +227,9 @@ public class HbaseDemo {
                     if (colName.equals("email")){
                         user.setEmail(value);
                     }
+                    if (colName.equals("city")){
+                        user.setCity(value);
+                    }
                 }
                 list.add(user);
             }
@@ -247,7 +271,11 @@ class User {
     private String age;
     private String phone;
     private String email;
-    public User(String id, String username, String password, String gender, String age, String phone, String email) {
+    private String city;
+
+
+
+    public User(String id, String username, String password, String gender, String age, String phone, String email,String city) {
         this.id = id;
         this.username = username;
         this.password = password;
@@ -255,6 +283,16 @@ class User {
         this.age = age;
         this.phone = phone;
         this.email = email;
+        this.city = city;
+    }
+
+
+    public String getCity() {
+        return city;
+    }
+
+    public void setCity(String city) {
+        this.city = city;
     }
 
     public User(){
@@ -327,6 +365,8 @@ class User {
                 ", age='" + age + '\'' +
                 ", phone='" + phone + '\'' +
                 ", email='" + email + '\'' +
-                '}';
+                ", city='" + city +'}';
     }
+
+
 }
