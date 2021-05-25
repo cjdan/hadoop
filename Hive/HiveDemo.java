@@ -49,7 +49,7 @@ public class HiveDemo {
 //            addColumns(statement,databaseName,tableName,columns);
         } catch (SQLException e) {
             e.printStackTrace();
-            System.out.println("连接不成功，请检查");
+            System.out.println("连接不成功~，请检查");
         }
     }
 
