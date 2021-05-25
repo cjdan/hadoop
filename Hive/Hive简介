@@ -1,0 +1,19 @@
+1.Hive简介
+    Hive是一个数据仓库基础工具在Hadoop中用来处理结构化数据。它架构在Hadoop之上，总归为大数据，并使得查询和分析方便。并提供简单的
+    sql查询功能，可以将sql语句转换为MapReduce任务进行运行。最初，Hive是由Facebook开发，后来由Apache软件基金会开发，并作为进一
+    步将它作为名义下Apache Hive为一个开源项目。Hive 没有专门的数据格式。 Hive 可以很好的工作在 Thrift 之上，控制分隔符，也允许
+    用户指定数据格式。Hive不适用于在线事务处理。 它最适用于传统的数据仓库任务。Hive 构建在基于静态批处理的Hadoop 之上，Hadoop
+    通常都有较高的延迟并且在作业提交和调度的时候需要大量的开销。因此，Hive 并不能够在大规模数据集上实现低延迟快速的查询，例如，
+    Hive 在几百MB 的数据集上执行查询一般有分钟级的时间延迟。因此，Hive 并不适合那些需要低延迟的应用，例如，联机事务处理（OLTP）。
+    Hive 查询操作过程严格遵守Hadoop MapReduce 的作业执行模型，Hive 将用户的HiveQL 语句通过解释器转换为MapReduce 作业提交
+    到Hadoop 集群上，Hadoop 监控作业执行过程，然后返回作业执行结果给用户。Hive 并非为联机事务处理而设计，Hive 并不提供实时的
+    查询和基于行级的数据更新操作。Hive 的最佳使用场合是大数据集的批处理作业，例如，网络日志分析。
+2.Hive的特点
+    2.1 通过SQL轻松访问数据的工具，从而实现数据仓库任务（如提取/转换/加载（ETL），报告和数据分析）。
+    2.2 一种对各种数据格式施加结构的机制
+    2.3 访问直接存储在Apache HDFS或其他数据存储系统（如Apache HBase）中的文件
+    2.4 通过Apache Tez，Apache Spark或MapReduce执行查询
+    2.5 程序语言与HPL-SQL
+    2.6 通过Hive LLAP，Apache YARN和Apache Slider进行亚秒级查询检索。
+
+

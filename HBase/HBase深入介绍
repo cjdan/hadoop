@@ -1,0 +1,44 @@
+1.Data Model
+    在 HBase 中，数据存储在具有行和列的表中。这是与关系数据库(RDBMS)的术语重叠，但这并不是一个有用的类比。相反，可以将 HBase 表视为多维 Map；
+    1.1 HBase 数据模型术语
+        Table：一个 HBase 表由多行组成。
+        Row：HBase 中的一行由一个行键和一个或多个与之相关联的列组成。行在存储时按行键按字母 Sequences 排序。因此，行键的设计非常重要。
+            目标是以相关行彼此靠近的方式存储数据。常见的行密钥模式是网站域。如果行键是域，则可能应该将它们反向存储(org.apache.www，org.apache.mail，org.apache.jira)。
+            这样，所有 Apache 域在表中彼此靠近，而不是根据子域的第一个字母散布开。
+        Column：HBase 中的列由列族和列限定符组成，它们由:(冒号)字符分隔。
+        Column Qualifier：将列限定符添加到列族，以提供给定数据段的索引。给定列族content，列限定符可能是content:html，另一个可能是content:pdf。
+            尽管列族在创建表时是固定的，但列限定符是可变的，并且行之间的差异可能很大。
+        Cell：单元格是行，列族和列限定符的组合，并包含一个值和一个时间戳，代表该值的版本。
+        Timestamp：时间戳与每个值一起写入，并且是值的给定版本的标识符。默认情况下，时间戳表示写入数据时在 RegionServer 上的时间，但是在将数据放入单元格时，可以指定其他时间戳值。
+    1.2 概念视图
+        如webtable表.jpg所示,，该表包含两行(com.cnn.www和com.example.www)以及三个名为contents，anchor和people的列族。在此示例中，对于第一行(com.cnn.www)，
+        anchor包含两列(anchor:cssnsi.com，anchor:my.look.ca)，而contents包含一列(contents:html)。本示例包含具有行键com.cnn.www的行的 5 个版本和具有行键
+        com.example.www的行的一个版本。 contents:html列限定符包含给定网站的整个 HTML。 anchor列族的限定符每个都包含链接到该行表示的站点的外部站点，
+        以及该链接的锚点中使用的文本。 people列族表示与该站点关联的人员。
+        该表中看起来为空的单元格在 HBase 中不占用空间，或实际上不存在。这就是使 HBase“稀疏”的原因。表格视图不是查看 HBase 中数据的唯一可能方法，甚至不是最准确的方法。
+        以下代表与多维 Map 相同的信息。这仅是出于说明目的的模型，可能并非严格准确。
+        {
+          "com.cnn.www": {
+            contents: {
+              t6: contents:html: "<html>..."
+              t5: contents:html: "<html>..."
+              t3: contents:html: "<html>..."
+            }
+            anchor: {
+              t9: anchor:cnnsi.com = "CNN"
+              t8: anchor:my.look.ca = "CNN.com"
+            }
+            people: {}
+          }
+          "com.example.www": {
+            contents: {
+              t5: contents:html: "<html>..."
+            }
+            anchor: {}
+            people: {
+              t5: people:author: "John Doe"
+            }
+          }
+        }
+    1.3 物理视图
+
