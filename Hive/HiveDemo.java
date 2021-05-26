@@ -25,11 +25,11 @@ public class HiveDemo {
             String localFilePath = "/usr/local/data/student.csv";
             Statement statement = con.createStatement();//连接
             String databaseName = "study";
-            String tableName = "students";
+            String tableName = "person";
             String databaseSQL = "create database if not exists " + databaseName;
 //            readLocalFile(statement,databaseName,tableName,localFilePath);
-            selectTable(statement,databaseName,tableName,12);
-//            dropTable(statement,databaseName,tableName);
+//            selectTable(statement,databaseName,tableName,12);
+            dropTable(statement,databaseName,tableName);
 
 
 
@@ -40,11 +40,11 @@ public class HiveDemo {
 //            showDatabases(statement);
 
 //            showTables(statement,);
-//            String tableSQL = "create table if NOT exists "+tableName+" (id int comment '学号', " +
-//                    "name varchar(200) COMMENT '姓名',age int comment '年龄',gender varchar(200) comment '性别'," +
-//                    "height int comment '身高') row format delimited fields terminated by ','";
+//            String tableSQL = "create table if NOT exists "+databaseName+"."+tableName+" (id int comment '编号', " +
+//                    "name varchar(200) COMMENT '姓名',age int COMMENT '年龄',gender varchar(200) comment '性别'," +
+//                    "height int comment '身高') partitioned by(data string) row format delimited fields terminated by ','";
 //            System.out.println(tableSQL);
-//            createTable(statement, databaseName, tableSQL);
+//            createTable(statement, tableSQL);
 //            descTable(statement,databaseName,tableName);
 //            addColumns(statement,databaseName,tableName,columns);
         } catch (SQLException e) {
@@ -77,9 +77,9 @@ public class HiveDemo {
     }
 
     //创建表
-    public static void createTable(Statement statement,String databaseName,String tableSQL) throws SQLException {
+    public static void createTable(Statement statement,String tableSQL) throws SQLException {
         try {
-            statement.execute("use "+databaseName);
+//            statement.execute("use "+databaseName);
             statement.execute(tableSQL);
             System.out.println("创建表成功");
         }catch (SQLException e){
@@ -91,8 +91,8 @@ public class HiveDemo {
     //删除表
     public static void dropTable(Statement statement,String databaseName,String tableName) throws SQLException {
         try {
-            statement.execute("use "+databaseName);
-            String sql = "drop table if exists "+tableName;
+
+            String sql = "drop table if exists "+databaseName+"."+tableName;
             statement.execute(sql);
             System.out.println("删除表成功");
         }catch (SQLException e){
@@ -178,7 +178,7 @@ public class HiveDemo {
         statement.execute("use "+databaseName);
         try{
 
-            String sql = "load data local inpath '"+localFilePath +"' into table "+tableName;
+            String sql = "load data local inpath '"+localFilePath +"' into table "+tableName +" PARTITION (data ='2021-05-26')";
             System.out.println("sql = "+sql);
             statement.execute(sql);
             System.out.println("导入数据成功");
@@ -209,4 +209,7 @@ public class HiveDemo {
             System.out.println("查询数据失败");
         }
     }
+
+//    创建表并指定表文件的存放路径
+
 }
