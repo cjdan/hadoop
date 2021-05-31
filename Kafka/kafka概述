@@ -36,7 +36,7 @@
         以便出错恢复时，从上次的位置继续消费。
     5.2 Kafka文件存储机制
         Kafka文件存储机制参考kafka文件存储机制.png。
-        由于生产者生产的消息会不断追加到log文件末尾，为防止log文件过大导致数据定位效率低下，Kafka采取了分片和索引机制，将每个partition分为多个。
+        由于生产者生产的消息会不断追加到log文件末尾，为防止log文件过大导致数据定位效率低下，Kafka采取了分片和索引机制，将每个partition分为多个segment。
         每个segment对应两个文件——“.index”文件和“.log”文件。这些文件位于一个文件夹下，该文件夹的命名规则为：topic名称+分区序号。
         例如，first这个topic有三个分区，则其对应的文件夹为first-0,first-1,first-2。
         index和log文件以当前segment的第一条消息的offset命名。index文件和log文件的结构示意图参考index文件和log文件的结构示意图.png。
