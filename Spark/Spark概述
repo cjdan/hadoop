@@ -232,6 +232,132 @@
         2) 当回溯到某一个RDD调用了checkpoint方法，会对当前的RDD做一个标记。
         3) Spark框架会自动启动一个新的job，重新计算这个RDD的数据，将数据持久化到HDFS上。
         优化：对RDD执行checkpoint之前，最好对这个RDD先执行cache，这样新启动的job只需要将内存中的数据拷贝到HDFS上就可以，省去了重新计算这一步。
+12.Spark-Submit
+    Options:
+    	--master
+     MASTER_URL, 可以是spark://host:port, mesos://host:port, yarn,  yarn-cluster,yarn-client, local
+    	--deploy-mode
+    DEPLOY_MODE, Driver程序运行的地方，client或者cluster,默认是client。
+    	--class
+    CLASS_NAME, 主类名称，含包名
+    	--jars
+    逗号分隔的本地JARS, Driver和executor依赖的第三方jar包
+    	--files
+    用逗号隔开的文件列表,会放置在每个executor工作目录中
+    	--conf
+    spark的配置属性
+    	--driver-memory
+    Driver程序使用内存大小（例如：1000M，5G），默认1024M
+    	--executor-memory
+    每个executor内存大小（如：1000M，2G），默认1G
+
+    Spark standalone with cluster deploy mode only:
+    	--driver-cores
+    Driver程序的使用core个数（默认为1），仅限于Spark standalone模式
+    Spark standalone or Mesos with cluster deploy mode only:
+    	--supervise
+    失败后是否重启Driver，仅限于Spark  alone或者Mesos模式
+    Spark standalone and Mesos only:
+    	--total-executor-cores
+    executor使用的总核数，仅限于SparkStandalone、Spark on Mesos模式
+
+    Spark standalone and YARN only:
+    	--executor-cores
+    每个executor使用的core数，Spark on Yarn默认为1，standalone默认为worker上所有可用的core。
+    YARN-only:
+    	--driver-cores
+    driver使用的core,仅在cluster模式下，默认为1。
+    	--queue
+    QUEUE_NAME  指定资源队列的名称,默认：default
+    	--num-executors
+    一共启动的executor数量，默认是2个。
+13.RDD Persistence（持久化）
+    Storage Level（存储级别）	Meaning（含义）
+    MEMORY_ONLY：将 RDD 以反序列化的 Java 对象的形式存储在 JVM 中. 如果内存空间不够，部分数据分区将不再缓存，在每次需要用到这些数据时重新进行计算. 这是默认的级别.
+    MEMORY_AND_DISK：将 RDD 以反序列化的 Java 对象的形式存储在 JVM 中。如果内存空间不够，将未缓存的数据分区存储到磁盘，在需要使用这些分区时从磁盘读取.
+    MEMORY_ONLY_SER：
+    (Java and Scala)：将 RDD 以序列化的 Java 对象的形式进行存储（每个分区为一个 byte 数组）。这种方式会比反序列化对象的方式节省很多空间，尤其是在使用 fast serializer 时会节省更多的空间，但是在读取时会增加 CPU 的计算负担.
+    MEMORY_AND_DISK_SER
+    (Java and Scala):类似于 MEMORY_ONLY_SER ，但是溢出的分区会存储到磁盘，而不是在用到它们时重新计算.
+    DISK_ONLY:只在磁盘上缓存 RDD.
+    MEMORY_ONLY_2, MEMORY_AND_DISK_2, etc:与上面的级别功能相同，只不过每个分区在集群中两个节点上建立副本.
+    OFF_HEAP (experimental 实验性):类似于 MEMORY_ONLY_SER, 但是将数据存储在 off-heap memory 中. 这需要启用 off-heap 内存.
+14.广播变量
+    广播变量在每个节点上保存一个只读的变量的缓存, 而不用给每个 task 来传送一个 copy.
+    例如, 给每个节点一个比较大的输入数据集是一个比较高效的方法. Spark 也会用该对象的广播逻辑去分发广播变量来降低通讯的成本.
+    广播变量通过调用SparkContext.broadcast(v)来创建. 广播变量是对v的包装, 通过调用广播变量的 value方法可以访问.
+    广播变量只会被发到各个节点一次，应作为只读值处理(修改广播变量的值不会影响到别的节点).
+15.Spark Streaming
+    Spark Streaming 是 Spark Core API 的扩展，它支持弹性的，高吞吐的，容错的实时数据流的处理。数据可以通过多种数据源获取，
+    例如 Kafka，Flume，Kinesis 以及 TCP sockets，也可以通过例如 map，reduce，join，window 等的高级函数组成的复杂算法处理。
+    最终，处理后的数据可以输出到文件系统，数据库以及实时仪表盘中。事实上，你还可以在 data streams（数据流）上使用机器学习以及图计算算法。
+    在内部，它工作原理如Spark Streaming流程图.jpg所示，Spark Streaming 接收实时输入数据流并将数据切分成多个 batch（批）数据，
+    然后由 Spark 引擎处理它们以生成最终的 stream of results in batches（分批流结果）。
+    Spark Streaming 提供了一个名为 discretized stream 或 DStream 的高级抽象，它代表一个连续的数据流。DStream 可以从数据源
+    的输入数据流创建，例如 Kafka，Flume 以及 Kinesis，或者在其他 DStream 上进行高层次的操作以创建。在内部，一个 DStream
+    是通过一系列的 RDDs 来表示。
+    StreamingContext 是所有流功能的主要入口点。
+    1) 初始化 StreamingContext
+        为了初始化一个 Spark Streaming 程序，一个 StreamingContext 对象必须要被创建出来，它是所有的 Spark Streaming 功能的主入口点,
+        一个 StreamingContext 对象可以从一个 SparkConf 对象中来创建。
+        在定义一个 context 之后,您必须执行以下操作。
+        	通过创建输入 DStreams 来定义输入源。
+        	通过应用转换和输出操作 DStreams 定义流计算（streaming computations）。
+        	开始接收输入并且使用 streamingContext.start() 来处理数据。
+        	使用 streamingContext.awaitTermination() 等待处理被终止（手动或者由于任何错误）。
+        	使用 streamingContext.stop() 来手动的停止处理。
+        需要注意的是：
+        	一旦一个 context 已经启动，将不会有新的数据流的计算可以被创建或者添加到它。
+        	一旦一个 context 已经停止，它不会被重新启动。
+        	同一时间内在 JVM 中只有一个 StreamingContext 可以被激活。
+        	在 StreamingContext 上的 stop() 同样也停止了 SparkContext。为了只停止 StreamingContext，
+            设置 stop() 的可选参数，名叫 stopSparkContext 为 false。
+        	一个 SparkContext 就可以被重用以创建多个 StreamingContexts，只要前一个 StreamingContext
+            在下一个StreamingContext 被创建之前停止（不停止 SparkContext）。
+    2） Discretized Streams (DStreams)（离散化流）
+        Discretized Stream or DStream 是 Spark Streaming 提供的基本抽象。它代表了一个连续的数据流，无论是从 source（数据源）
+        接收到的输入数据流，还是通过转换输入流所产生的处理过的数据流。在内部，一个 DStream 被表示为一系列连续的 RDDs，它是 Spark 中
+        一个不可改变的抽象。在一个 DStream 中的每个 RDD 包含来自一定的时间间隔的数据，如DStream示意图.jpg所示。
+    3) Input DStreams 和 Receivers（接收器）
+        输入 DStreams 是代表输入数据是从流的源数据（streaming sources）接收到的流的 DStream。
+        Spark Streaming 提供了两种内置的 streaming source（流的数据源）。
+        	_Basic sources（基础的数据源）_：在 StreamingContext API 中直接可以使用的数据源。例如：file systems
+            和 socket connections。
+        	_Advanced sources（高级的数据源）_：像 Kafka，Flume，Kinesis，等等这样的数据源。可以通过额外的 utility classes
+            来使用。像在 依赖 中讨论的一样，这些都需要额外的外部依赖。
+        注意：
+        	流处理程序中可以并行的接收多个数据流，然后创建多个 input DStreams。这将创建同时接收多个数据流的多个 receivers（接收器）。
+            但需要注意，一个 Spark 的 worker/executor 是一个长期运行的任务（task），因此它将占用分配给 Spark Streaming 的应用程序的
+            所有核中的一个核（core）。因此，要记住，一个 Spark Streaming 应用需要分配足够的核（core）（或线程（threads），如果本地运行
+            的话）来处理所接收的数据，以及来运行接收器（receiver(s)）。
+        	当在本地运行一个 Spark Streaming 程序的时候，不要使用 “local” 或者 “local[1]” 作为 master 的 URL。这两种方法中的任何一
+            个都意味着只有一个线程将用于运行本地任务。如果你正在使用一个基于接收器（receiver）的输入离散流（input DStream）（例如，sockets，
+            Kafka，Flume 等），则该单独的线程将用于运行接收器（receiver），而没有留下任何的线程用于处理接收到的数据。因此，在本地运行时，
+            总是用 “local[n]” 作为 master URL，其中的 n > 运行接收器的数量（查看 Spark 属性 来了解怎样去设置 master 的信息）。
+        	将逻辑扩展到集群上去运行，分配给 Spark Streaming 应用程序的内核（core）的内核数必须大于接收器（receiver）的数量。
+            否则系统将接收数据，但是无法处理它。
+    4) 基础的 Sources（数据源）
+        File Streams: 用于从文件中读取数据，在任何与 HDFS API 兼容的文件系统中（即，HDFS，S3，NFS 等）,Spark Streaming 将监控
+            dataDirectory 目录并且该目录中任何新建的文件 (写在嵌套目录中的文件是不支持的)。
+            注意：
+            	文件必须具有相同的数据格式。
+            	文件必须被创建在 dataDirectory 目录中，通过 atomically（原子的）moving（移动） 或 renaming（重命名） 它们到数据目录。
+            	一旦移动，这些文件必须不能再更改，因此如果文件被连续地追加，新的数据将不会被读取。
+            	对于简单的文本文件，还有一个更加简单的方法 streamingContext.textFileStream(dataDirectory)。并且文件流（file streams）
+                不需要运行一个接收器（receiver），因此，不需要分配内核（core）。
+            	Python API 在 Python API 中 fileStream 是不可用的，只有 textFileStream 是可用的。
+        Streams based on Custom Receivers（基于自定义的接收器的流）: DStreams 可以使用通过自定义的 receiver（接收器）接收到的数据来创建。
+        ueue of RDDs as a Stream（RDDs 队列作为一个流）: 可以使用 streamingContext.queueStream(queueOfRDDs) 创建一个基于 RDDs
+            队列的 DStream，每个进入队列的 RDD 都将被视为 DStream 中的一个批次数据，并且就像一个流进行处理。
+    5) 高级 Sources（数据源）
+        Kafka: Spark Streaming 2.2.0 与 Kafka broker 版本 0.8.2.1 或更高是兼容的。
+        Flume: Spark Streaming 2.2.0 与 Flume 1.6.0 相兼容。
+        Kinesis: Spark Streaming 2.2.0 与 Kinesis Client Library 1.2.1 相兼容。
+    6) UpdateStateByKey 操作
+        updateStateByKey 操作允许维护任意状态，同时不断更新新信息。需要通过两步来使用它。
+        1.定义 state - state 可以是任何的数据类型。
+        2.定义 state update function（状态更新函数）- 使用函数指定如何使用先前状态来更新状态，并从输入流中指定新值。
+
 
 
 

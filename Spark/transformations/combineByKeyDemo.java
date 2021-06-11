@@ -18,7 +18,7 @@ public class combineByKeyDemo {
         SparkConf conf = new SparkConf();
         conf.setMaster("local").setAppName("combineByKey");
         JavaSparkContext jsc = new JavaSparkContext(conf);
-        /**
+        /*
          * Zhang San 7
          * Li Si 9
          * Wang Wu 5

@@ -12,8 +12,8 @@ import java.net.URISyntaxException;
 public class DeleteHDFSFile {
     public static void main(String[] args) throws InterruptedException, IOException, URISyntaxException {
         Configuration conf=new Configuration();//加载配置
-        String OutputFilePath = "/user/south/input/test.txt";
-        String OutputFilePath1 = "/user/south/input";
+        String OutputFilePath = "/user/spark/checkpoint1/temp";
+        String OutputFilePath1 = "/user/spark/checkpoint1";
         Path path = new Path(OutputFilePath);
         Path path1 = new Path(OutputFilePath1);
         URI url = new URI("hdfs://server1:9000");
