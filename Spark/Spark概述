@@ -357,6 +357,24 @@
         updateStateByKey 操作允许维护任意状态，同时不断更新新信息。需要通过两步来使用它。
         1.定义 state - state 可以是任何的数据类型。
         2.定义 state update function（状态更新函数）- 使用函数指定如何使用先前状态来更新状态，并从输入流中指定新值。
+16.Spark SQL, DataFrames and Datasets
+    1) Spark SQL: Spark 处理结构化数据的一个模块。与基础的 Spark RDD API 不同，Spark SQL 提供了查询结构化数据及计算结果等信息的接口。
+    在内部，Spark SQL 使用这个额外的信息去执行额外的优化。有几种方式可以跟 Spark SQL 进行交互，包括 SQL 和 Dataset API。当使用相同执
+    行引擎进行计算时，无论使用哪种 API / 语言都可以快速的计算。这种统一意味着开发人员能够在基于提供最自然的方式来表达一个给定的
+    transformation API 之间实现轻松的来回切换不同的。
+    Datasets and DataFrames:一个 Dataset 是一个分布式的数据集合 Dataset 是在 Spark 1.6 中被添加的新接口，它提供了 RDD 的优点
+    （强类型化，能够使用强大的 lambda 函数）与Spark SQL执行引擎的优点。一个 Dataset 可以从 JVM 对象来构造并且使用转换功能
+    （map，flatMap，filter，等等）
+    Spark SQL中所有功能的入口点是 SparkSession 类。
+    2) Spark on Hive:Hive只作为储存角色，Spark负责sql解析优化，执行。
+       Hive on Spark：Hive即作为存储又负责sql的解析优化，Spark负责执行。
+    3) DataFrame
+        DataFrame也是一个分布式数据容器。与RDD类似，然而DataFrame更像传统数据库的二维表格，除了数据以外，还掌握数据的结构信息，即schema。
+        同时，与Hive类似，DataFrame也支持嵌套数据类型（struct、array和map）。从API易用性的角度上 看， DataFrame API提供的是一套高层
+        的关系操作，比函数式的RDD API要更加友好，门槛更低。
+        DataFrame的底层封装的是RDD，只不过RDD的泛型是Row类型。
+    4)
+
 
 
 

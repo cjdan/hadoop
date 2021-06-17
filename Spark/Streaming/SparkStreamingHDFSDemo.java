@@ -34,8 +34,7 @@ public class SparkStreamingHDFSDemo {
 //            JavaDStream<String> lines = ssc.textFileStream("file:///E:/data/pvuvdata");
             JavaDStream<String> words = lines.flatMap(s->Arrays.asList(s.split(" ")).iterator());
             JavaPairDStream<String, Integer> ones = words.mapToPair(s -> new Tuple2<>(s, 1));
-            JavaPairDStream<String, Integer> counts =
-                            ones.updateStateByKey(new Function2<List<Integer>, Optional<Integer>, Optional<Integer>>() {
+            JavaPairDStream<String, Integer> counts = ones.updateStateByKey(new Function2<List<Integer>, Optional<Integer>, Optional<Integer>>() {
 
                                 /**
                                  *

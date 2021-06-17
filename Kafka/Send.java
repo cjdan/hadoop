@@ -27,7 +27,7 @@ public class Send {
          *  会调用此 CallBack 对象的 onCompletion() 方法，实现回调功能
          */
         try {
-            KafkaProducer<String, String> producer = new KafkaProducer(Prop);//kafka生产者
+            KafkaProducer<String, String> producer = new KafkaProducer<>(Prop);//kafka生产者
             String topic = "myTopic";
             String topic1 = "test";
             long s=0;
@@ -41,12 +41,12 @@ public class Send {
                 String key = (i + 10)+"";
                 String value = (i * 10) + "";
 
-                ProducerRecord<String, String> producerRecord = new ProducerRecord(topic, Integer.toString(i), Integer.toString(i));
-                ProducerRecord<String, String> producerRecord1 = new ProducerRecord(topic1, key, value);
+                ProducerRecord<String, String> producerRecord = new ProducerRecord<>(topic, Integer.toString(i), Integer.toString(i));
+                ProducerRecord<String, String> producerRecord1 = new ProducerRecord<>(topic1, key, value);
 
                 producer.send(producerRecord, new DemoCallBack(s, i, Integer.toString(i)));
                 producer.send(producerRecord1, new DemoCallBack(s1, i + 10, value));
-                System.out.println(Integer.toString(i) + " : " + Integer.toString(i));
+                System.out.println(i + " : " + i);
                 System.out.println(key+ " : " + value);
                 Thread.sleep(1000);
             }
